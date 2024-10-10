@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"gorm.io/driver/postgres"
@@ -16,5 +17,7 @@ func OpenDB(url string) (*gorm.DB, error) {
 
 	return gorm.Open(postgres.New(postgres.Config{
 		Conn: conn,
-	}), &gorm.Config{TranslateError: true})
+	}), &gorm.Config{TranslateError: true, NowFunc: func() time.Time {
+		return time.Now().UTC()
+	}})
 }

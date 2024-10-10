@@ -17,13 +17,13 @@ import (
 type App struct {
 	engine *echo.Echo
 	db     *gorm.DB
-	config *config.EnvConfig
+	config *config.AppConfig
 }
 
 func NewApp() *App {
 	config, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("something went wrong %v", err)
+		log.Fatalf("Fail to populate app config: %v", err)
 	}
 	e := echo.New()
 	// create new application
@@ -85,6 +85,7 @@ func (app *App) RegisterRoutes() {
 	api := app.engine.Group("/api")
 	api.GET("/", app.healthCheck)
 	api.GET("/document", app.GetDocuments, app.ClerkAuthMiddleware)
+	api.POST("/document", app.CreateDocument, app.ClerkAuthMiddleware)
 }
 
 func (app *App) RunMigrate() {
