@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"loshon-api/internals/validator"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -53,9 +54,15 @@ func loadEnv(altPath string) (*AppConfig, error) {
 	err := v.ValidateStruct(config)
 
 	if err != nil {
+		var envPath string
+		if secretPathFromEnv, ok := os.LookupEnv("SECRET_PATH"); ok {
+			envPath = secretPathFromEnv
+		} else {
+			envPath = ".env"
+		}
 		viper.AddConfigPath(altPath)
 		viper.SetConfigType("env")
-		viper.SetConfigFile(".env")
+		viper.SetConfigFile(envPath)
 
 		if err := viper.ReadInConfig(); err != nil {
 			return nil, fmt.Errorf("error loading alternative config: %v", err.Error())
