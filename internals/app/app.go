@@ -33,6 +33,7 @@ func NewApp() *App {
 	}
 
 	clerk.SetKey(app.config.ClerkSecretKey)
+	app.engine.Pre(middleware.RemoveTrailingSlash())
 	app.engine.Use(middleware.RequestID())
 	app.engine.Use(middleware.Recover())
 	app.engine.Use(middleware.CORSWithConfig(middleware.CORSConfig{
