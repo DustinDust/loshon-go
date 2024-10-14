@@ -23,7 +23,7 @@ func (app App) GetDocuments(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "invalid context")
 	}
 	var parentDocument interface{}
-	if parentId := c.Get("parent_id"); parentId != "" {
+	if parentId := c.QueryParam("parentDocument"); parentId != "" {
 		parentDocument = parentId
 	} else {
 		parentDocument = nil
@@ -33,7 +33,7 @@ func (app App) GetDocuments(c echo.Context) error {
 
 	result := app.db.
 		Where("user_id", user.ID).
-		Where("parent_document", parentDocument).
+		Where("parent_document_id", parentDocument).
 		Where("is_archived", false).
 		Find(&documents)
 
@@ -68,15 +68,16 @@ func (app App) CreateDocument(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 	}
+
 	document := data.Document{
-		Title:          createData.Title,
-		UserID:         user.ID,
-		IsArchived:     createData.IsArchived,
-		IsPublished:    createData.IsPublished,
-		ParentDocument: createData.ParentDocument,
-		Content:        createData.Content,
-		CoverImage:     createData.CoverImage,
-		Icon:           createData.Icon,
+		Title:            createData.Title,
+		UserID:           user.ID,
+		IsArchived:       createData.IsArchived,
+		IsPublished:      createData.IsPublished,
+		ParentDocumentID: createData.ParentDocumentID,
+		Content:          createData.Content,
+		CoverImage:       createData.CoverImage,
+		Icon:             createData.Icon,
 	}
 	result := app.db.Create(&document)
 	if result.Error != nil {
@@ -85,4 +86,29 @@ func (app App) CreateDocument(c echo.Context) error {
 	return c.JSON(http.StatusOK, Response[data.Document]{
 		Data: document,
 	})
+}
+
+func (app App) ArchiveDocument(c echo.Context) error {
+	user, ok := c.Get("user").(*clerk.User)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "invalid context")
+	}
+
+	documentID := c.Param("documentID")
+	var document data.Document
+	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
+		switch {
+		case (errors.Is(err, gorm.ErrRecordNotFound)):
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+	if user.ID != document.UserID {
+		return echo.ErrForbidden
+	}
+	if err := document.ArchiveAll(app.db); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, echo.Map{})
 }

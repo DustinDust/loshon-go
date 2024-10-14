@@ -7,11 +7,11 @@ type Response[T any] struct {
 }
 
 type CreateDocumentRequest struct {
-	Title          string  `json:"title" validate:"required,min=2"`
-	IsArchived     bool    `json:"isArchived"`
-	IsPublished    bool    `json:"isPublished"`
-	ParentDocument *string `json:"parentDocument"`
-	Content        *string `json:"content" `
-	CoverImage     *string `json:"coverImage"`
-	Icon           *string `json:"icon"`
+	Title            string  `json:"title" validate:"required,min=2"`
+	IsArchived       bool    `json:"isArchived"`
+	IsPublished      bool    `json:"isPublished"`
+	ParentDocumentID *string `json:"parentDocumentId"`
+	Content          *string `json:"content" `
+	CoverImage       *string `json:"coverImage"`
+	Icon             *string `json:"icon"`
 }

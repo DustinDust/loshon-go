@@ -87,6 +87,7 @@ func (app *App) RegisterRoutes() {
 	api.GET("", app.healthCheck)
 	api.GET("/document", app.GetDocuments, app.ClerkAuthMiddleware)
 	api.POST("/document", app.CreateDocument, app.ClerkAuthMiddleware)
+	api.DELETE("/document/:documentID", app.ArchiveDocument, app.ClerkAuthMiddleware)
 }
 
 func (app *App) RunMigrate() {
