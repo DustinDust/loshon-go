@@ -84,10 +84,16 @@ func (app *App) Run() error {
 
 func (app *App) RegisterRoutes() {
 	api := app.engine.Group("/api")
+
 	api.GET("", app.healthCheck)
+
 	api.GET("/document", app.GetDocuments, app.ClerkAuthMiddleware)
 	api.POST("/document", app.CreateDocument, app.ClerkAuthMiddleware)
 	api.DELETE("/document/:documentID", app.ArchiveDocument, app.ClerkAuthMiddleware)
+
+	api.GET("/archived/document", app.GetArchivedDocuments, app.ClerkAuthMiddleware)
+	api.PATCH("/archived/document/:documentID", app.RestoreArchivedDocument, app.ClerkAuthMiddleware)
+	api.DELETE("/archived/document/:documentID", app.RemoveArchivedDocument, app.ClerkAuthMiddleware)
 }
 
 func (app *App) RunMigrate() {

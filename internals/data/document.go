@@ -46,7 +46,7 @@ func (doc *Document) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (doc *Document) ArchiveAll(db *gorm.DB) error {
+func (doc *Document) ArchiveRecursively(db *gorm.DB) error {
 	statement := `
 	WITH RECURSIVE d AS (
   	SELECT documents.id
@@ -70,4 +70,41 @@ func (doc *Document) ArchiveAll(db *gorm.DB) error {
 		slog.Warn("error realoading object", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 	}
 	return nil
+}
+
+func (doc *Document) DeleteRecursively(db *gorm.DB) error {
+	statement := `
+	WITH RECURSIVE d AS (
+  	SELECT documents.id
+   		FROM documents
+   		WHERE documents.id = ?
+ 		UNION ALL
+  	SELECT child.id
+  		FROM d JOIN documents child ON child.parent_document_id = d.id
+		)
+    UPDATE documents b set deleted_at = NOW()::TIMESTAMP
+ 		FROM d
+ 		WHERE d.id = b.id
+	`
+	if err := db.Exec(statement, doc.ID).Error; err != nil {
+		return err
+	}
+	if err := db.Preload("ChildDocuments").Find(doc).Error; err != nil {
+		slog.Warn("error realoading object", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+	}
+	return nil
+}
+
+func (doc *Document) RestoreRecursively(db *gorm.DB) error {
+	doc.IsArchived = false
+	if doc.ParentDocumentID != nil {
+		parentDocument := Document{}
+		if err := db.First(&parentDocument, "id = ?", doc.ParentDocumentID).Error; err != nil {
+			return err
+		}
+		if err := parentDocument.RestoreRecursively(db); err != nil {
+			return err
+		}
+	}
+	return db.Save(&doc).Error
 }
