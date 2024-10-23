@@ -16,7 +16,7 @@ type Document struct {
 	IsArchived       bool           `gorm:"default=false" json:"isArchived"`
 	IsPublished      bool           `gorm:"default=false" json:"isPublished"`
 	ParentDocumentID *string        `gorm:"index,type:uuid" json:"parentDocumentId"`
-	ChildDocuments   []Document     `gorm:"foreignKey:ParentDocumentID"`
+	ChildDocuments   []Document     `gorm:"foreignKey:ParentDocumentID" json:"-"`
 	Content          *string        `json:"content"`
 	CoverImage       *string        `json:"coverImage"`
 	Icon             *string        `json:"icon"`

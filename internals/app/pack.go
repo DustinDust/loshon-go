@@ -10,8 +10,13 @@ type CreateDocumentRequest struct {
 	Title            string  `json:"title" validate:"required,min=2"`
 	IsArchived       bool    `json:"isArchived"`
 	IsPublished      bool    `json:"isPublished"`
-	ParentDocumentID *string `json:"parentDocumentId"`
-	Content          *string `json:"content" `
-	CoverImage       *string `json:"coverImage"`
-	Icon             *string `json:"icon"`
+	ParentDocumentID *string `json:"parentDocumentId,omitempty"`
+	Content          *string `json:"content,omitempty" `
+	CoverImage       *string `json:"coverImage,omitempty"`
+	Icon             *string `json:"icon,omitempty"`
+}
+
+type UpdateDocumentRequest struct {
+	*CreateDocumentRequest
+	ID string `json:"id" validate:"required,uuid"`
 }

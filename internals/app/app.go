@@ -87,15 +87,23 @@ func (app *App) RegisterRoutes() {
 
 	api.GET("", app.healthCheck)
 
-	api.GET("/document", app.GetDocuments, app.ClerkAuthMiddleware)
-	api.POST("/document", app.CreateDocument, app.ClerkAuthMiddleware)
-	api.DELETE("/document/:documentID", app.ArchiveDocument, app.ClerkAuthMiddleware)
+	api.GET("/documents", app.GetDocuments, app.ClerkAuthMiddleware)
+	api.GET("/documents/:documentID", app.GetDocumentByID, app.ClerkAuthMiddleware)
+	api.POST("/documents", app.CreateDocument, app.ClerkAuthMiddleware)
+	api.PATCH("/documents/:documentID", app.UpdateDocument, app.ClerkAuthMiddleware)
+	api.DELETE("/documents/:documentID", app.ArchiveDocument, app.ClerkAuthMiddleware)
 
-	api.GET("/archived/document", app.GetArchivedDocuments, app.ClerkAuthMiddleware)
-	api.PATCH("/archived/document/:documentID", app.RestoreArchivedDocument, app.ClerkAuthMiddleware)
-	api.DELETE("/archived/document/:documentID", app.RemoveArchivedDocument, app.ClerkAuthMiddleware)
+	api.GET("/archives/documents", app.GetArchivedDocuments, app.ClerkAuthMiddleware)
+	api.PATCH("/archives/documents/:documentID", app.RestoreArchivedDocument, app.ClerkAuthMiddleware)
+	api.DELETE("/archives/documents/:documentID", app.RemoveArchivedDocument, app.ClerkAuthMiddleware)
 }
 
 func (app *App) RunMigrate() {
 	app.db.AutoMigrate(data.Document{})
+}
+
+func (a App) healthCheck(c echo.Context) error {
+	return c.JSON(200, map[string]string{
+		"ping": "pong",
+	})
 }

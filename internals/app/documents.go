@@ -11,12 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func (a App) healthCheck(c echo.Context) error {
-	return c.JSON(200, map[string]string{
-		"ping": "pong",
-	})
-}
-
 func (app App) GetDocuments(c echo.Context) error {
 	var user (*clerk.User)
 	var parentDocument interface{}
@@ -52,27 +46,35 @@ func (app App) GetDocuments(c echo.Context) error {
 	})
 }
 
-func (app App) GetArchivedDocuments(c echo.Context) error {
-	var user *clerk.User
-	var documents []data.Document
+func (app App) GetDocumentByID(c echo.Context) error {
+	var user (*clerk.User)
+	var document data.Document
 
 	user, ok := c.Get("user").(*clerk.User)
 	if !ok {
 		return echo.ErrUnauthorized
 	}
-
-	result := app.db.Where("user_id=?", user.ID).Where("is_archived=?", true).Find(&documents)
-	if err := result.Error; err != nil {
+	documentID := c.Param("documentID")
+	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
 		switch {
-		case errors.Is(result.Error, gorm.ErrRecordNotFound):
-			return echo.NewHTTPError(http.StatusNotFound, result.Error)
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return echo.NewHTTPError(http.StatusNotFound, err)
 		default:
-			return echo.NewHTTPError(http.StatusInternalServerError, result.Error)
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 	}
-	return c.JSON(http.StatusOK, Response[[]data.Document]{
-		Data:  documents,
-		Total: int(result.RowsAffected),
+	if document.IsPublished && !document.IsArchived {
+		return c.JSON(http.StatusOK, Response[data.Document]{
+			Data: document,
+		})
+	}
+
+	if document.UserID != user.ID {
+		return echo.ErrForbidden
+	}
+
+	return c.JSON(http.StatusOK, Response[data.Document]{
+		Data: document,
 	})
 }
 
@@ -83,7 +85,7 @@ func (app App) CreateDocument(c echo.Context) error {
 
 	user, ok := c.Get("user").(*clerk.User)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "invalid context object")
+		return echo.ErrUnauthorized
 	}
 
 	if err := c.Bind(&createData); err != nil {
@@ -117,43 +119,31 @@ func (app App) CreateDocument(c echo.Context) error {
 	})
 }
 
-func (app App) ArchiveDocument(c echo.Context) error {
+func (app App) UpdateDocument(c echo.Context) error {
 	var user *clerk.User
 	var document data.Document
 
-	user, ok := c.Get("user").(*clerk.User)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "invalid context")
+	updateData := UpdateDocumentRequest{
+		ID: c.Param("documentID"),
 	}
-
-	documentID := c.Param("documentID")
-	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
-		switch {
-		case (errors.Is(err, gorm.ErrRecordNotFound)):
-			return echo.NewHTTPError(http.StatusNotFound, err)
-		default:
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
-	}
-	if user.ID != document.UserID {
-		return echo.ErrForbidden
-	}
-	if err := document.ArchiveRecursively(app.db); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-	return c.JSON(http.StatusOK, echo.Map{})
-}
-
-func (app App) RestoreArchivedDocument(c echo.Context) error {
-	var user *clerk.User
-	var document data.Document
-
+	v := validator.NewValidator()
 	user, ok := c.Get("user").(*clerk.User)
 	if !ok {
 		return echo.ErrUnauthorized
 	}
-	documentID := c.Param("documentID")
-	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
+
+	if err := c.Bind(&updateData); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request object")
+	}
+	if err := v.ValidateStruct(updateData); err != nil {
+		if verr, ok := err.(*validator.StructValidationErrors); ok {
+			return verr.TranslateToHttpError()
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	}
+
+	if err := app.db.First(&document, "id = ?", updateData.ID).Error; err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			return echo.NewHTTPError(http.StatusNotFound, err)
@@ -161,39 +151,23 @@ func (app App) RestoreArchivedDocument(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 	}
+
 	if document.UserID != user.ID {
 		return echo.ErrForbidden
 	}
-	if err := document.RestoreRecursively(app.db); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-	return c.JSON(http.StatusOK, echo.Map{})
-}
 
-func (app App) RemoveArchivedDocument(c echo.Context) error {
-	var user *clerk.User
-	var document data.Document
+	// merge attributes
+	document.Content = updateData.Content
+	document.Title = updateData.Title
+	document.ParentDocumentID = updateData.ParentDocumentID
+	document.Icon = updateData.Icon
+	document.CoverImage = updateData.CoverImage
 
-	user, ok := c.Get("user").(*clerk.User)
-	if !ok {
-		return echo.ErrUnauthorized
-	}
-	documentID := c.Param("documentID")
-	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
-		switch {
-		case errors.Is(err, gorm.ErrRecordNotFound):
-			return echo.NewHTTPError(http.StatusNotFound, err)
-		default:
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-
-		}
-	}
-	if user.ID != document.UserID {
-		return echo.ErrForbidden
-	}
-	if err := document.DeleteRecursively(app.db); err != nil {
+	if err := app.db.Save(&document).Error; err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{})
+	return c.JSON(http.StatusOK, Response[data.Document]{
+		Data: document,
+	})
 }
