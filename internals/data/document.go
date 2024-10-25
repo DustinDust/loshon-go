@@ -108,3 +108,45 @@ func (doc *Document) RestoreRecursively(db *gorm.DB) error {
 	}
 	return db.Save(&doc).Error
 }
+
+func (doc *Document) SetParentDocument(parentDocumentID Optional[string]) {
+	if parentDocumentID.Defined {
+		doc.ParentDocumentID = parentDocumentID.Value
+	}
+}
+
+func (doc *Document) SetTitle(title Optional[string]) {
+	if title.Defined {
+		doc.Title = *title.Value
+	}
+}
+
+func (doc *Document) SetContent(content Optional[string]) {
+	if content.Defined {
+		doc.Content = content.Value
+	}
+}
+
+func (doc *Document) SetCoverImage(coverImage Optional[string]) {
+	if coverImage.Defined {
+		doc.CoverImage = coverImage.Value
+	}
+}
+
+func (doc *Document) SetIcon(icon Optional[string]) {
+	if icon.Defined {
+		doc.Icon = icon.Value
+	}
+}
+
+func (doc *Document) SetIsArchived(isArchived Optional[bool]) {
+	if isArchived.Defined {
+		doc.IsArchived = *isArchived.Value
+	}
+}
+
+func (doc *Document) SetIsPublished(isPublished Optional[bool]) {
+	if isPublished.Defined {
+		doc.IsPublished = *isPublished.Value
+	}
+}

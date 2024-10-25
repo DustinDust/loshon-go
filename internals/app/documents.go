@@ -156,12 +156,12 @@ func (app App) UpdateDocument(c echo.Context) error {
 		return echo.ErrForbidden
 	}
 
-	// merge attributes
-	document.Content = updateData.Content
-	document.Title = updateData.Title
-	document.ParentDocumentID = updateData.ParentDocumentID
-	document.Icon = updateData.Icon
-	document.CoverImage = updateData.CoverImage
+	// patch attributes
+	document.SetContent(updateData.Content)
+	document.SetTitle(updateData.Title)
+	document.SetParentDocument(updateData.ParentDocumentID)
+	document.SetIcon(updateData.Icon)
+	document.SetCoverImage(updateData.CoverImage)
 
 	if err := app.db.Save(&document).Error; err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
