@@ -21,18 +21,38 @@ type App struct {
 }
 
 func NewApp() *App {
-	config, err := config.LoadConfig()
-	if err != nil {
-		log.Fatalf("Fail to populate app config: %v", err)
-	}
 	e := echo.New()
 	// create new application
 	app := &App{
 		engine: e,
-		config: config,
 	}
 
+	app.RegisterConfig()
 	clerk.SetKey(app.config.ClerkSecretKey)
+	app.RegisterMiddlewares()
+	app.RegisterDB()
+	app.RegisterRoutes()
+
+	return app
+}
+
+func (app *App) RegisterConfig() {
+	var err error
+	app.config, err = config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load app config %v", err)
+	}
+}
+
+func (app *App) RegisterDB() {
+	db, err := data.OpenDB(app.config.PostgresUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	app.db = db
+}
+
+func (app *App) RegisterMiddlewares() {
 	app.engine.Pre(middleware.RemoveTrailingSlash())
 	app.engine.Use(middleware.RequestID())
 	app.engine.Use(middleware.Recover())
@@ -62,24 +82,7 @@ func NewApp() *App {
 		},
 	}))
 	app.engine.Static("", "assets")
-
-	db, err := data.OpenDB(app.config.PostgresUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-	app.db = db
-
-	app.RegisterRoutes()
-
-	return app
-}
-
-func (app *App) Run() error {
-	addr := app.config.Addr
-	if addr == "" {
-		addr = ":80"
-	}
-	return app.engine.Start(addr)
+	app.engine.Use(middleware.Logger())
 }
 
 func (app *App) RegisterRoutes() {
@@ -98,8 +101,12 @@ func (app *App) RegisterRoutes() {
 	api.DELETE("/archives/documents/:documentID", app.RemoveArchivedDocument, app.ClerkAuthMiddleware)
 }
 
-func (app *App) RunMigrate() {
-	app.db.AutoMigrate(data.Document{})
+func (app *App) Run() error {
+	addr := app.config.Addr
+	if addr == "" {
+		addr = ":80"
+	}
+	return app.engine.Start(addr)
 }
 
 func (a App) healthCheck(c echo.Context) error {

@@ -30,7 +30,8 @@ func (app App) GetDocuments(c echo.Context) error {
 		Where("user_id", user.ID).
 		Where("parent_document_id", parentDocument).
 		Where("is_archived", false).
-		Find(&documents)
+		Find(&documents).
+		Order("created_at ASC")
 
 	if result.Error != nil {
 		switch {

@@ -38,10 +38,11 @@ func (aconf *AppConfig) Merge(conf *AppConfig) {
 	}
 }
 
-func loadEnv(altPath string) (*AppConfig, error) {
+func loadEnv(env string) (*AppConfig, error) {
 	// auto load to env
 	viper.AutomaticEnv()
 
+	// construct config from env
 	config := AppConfig{
 		ClerkPublishableKey: viper.GetString("CLERK_PUBLISHABLE_KEY"),
 		ClerkSecretKey:      viper.GetString("CLERK_SECRET_KEY"),
@@ -53,14 +54,15 @@ func loadEnv(altPath string) (*AppConfig, error) {
 	v := validator.NewValidator()
 	err := v.ValidateStruct(config)
 
+	// if struct validation fail (missing required fields), try to load from file
 	if err != nil {
 		var envPath string
 		if secretPathFromEnv, ok := os.LookupEnv("SECRET_PATH"); ok {
 			envPath = secretPathFromEnv
 		} else {
-			envPath = ".env"
+			envPath = fmt.Sprintf(".env.%s", env)
 		}
-		viper.AddConfigPath(altPath)
+
 		viper.SetConfigType("env")
 		viper.SetConfigFile(envPath)
 
@@ -82,5 +84,12 @@ func loadEnv(altPath string) (*AppConfig, error) {
 }
 
 func LoadConfig() (*AppConfig, error) {
-	return loadEnv(".")
+	var env string
+	if e, ok := os.LookupEnv("ENV"); !ok {
+		env = "development"
+	} else {
+		env = e
+	}
+
+	return loadEnv(env)
 }

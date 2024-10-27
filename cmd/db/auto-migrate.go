@@ -1,8 +1,19 @@
 package main
 
-import "loshon-api/internals/app"
+import (
+	"log"
+	"loshon-api/internals/config"
+	"loshon-api/internals/data"
+)
 
 func main() {
-	app := app.NewApp()
-	app.RunMigrate()
+	config, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load app config %v", err)
+	}
+	db, err := data.OpenDB(config.PostgresUrl)
+	if err != nil {
+		log.Fatalf("Failed to open connection to DB %v", err)
+	}
+	db.AutoMigrate(data.Document{})
 }
