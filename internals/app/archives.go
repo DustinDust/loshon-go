@@ -63,7 +63,7 @@ func (app App) RestoreArchivedDocument(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{})
 }
 
-func (app App) RemoveArchivedDocument(c echo.Context) error {
+func (app App) DeleteArchivedDocument(c echo.Context) error {
 	var user *clerk.User
 	var document data.Document
 

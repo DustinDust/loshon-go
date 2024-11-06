@@ -96,9 +96,9 @@ func (app *App) RegisterRoutes() {
 	api.PATCH("/documents/:documentID", app.UpdateDocument, app.ClerkAuthMiddleware)
 	api.DELETE("/documents/:documentID", app.ArchiveDocument, app.ClerkAuthMiddleware)
 
-	api.GET("/archives/documents", app.GetArchivedDocuments, app.ClerkAuthMiddleware)
-	api.PATCH("/archives/documents/:documentID", app.RestoreArchivedDocument, app.ClerkAuthMiddleware)
-	api.DELETE("/archives/documents/:documentID", app.RemoveArchivedDocument, app.ClerkAuthMiddleware)
+	api.GET("/documents/_archives", app.GetArchivedDocuments, app.ClerkAuthMiddleware)
+	api.PATCH("/documents/_restore/:documentID", app.RestoreArchivedDocument, app.ClerkAuthMiddleware)
+	api.DELETE("/documents/_delete/:documentID", app.DeleteArchivedDocument, app.ClerkAuthMiddleware)
 }
 
 func (app *App) Run() error {
