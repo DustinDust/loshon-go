@@ -51,10 +51,6 @@ func (app App) GetDocumentByID(c echo.Context) error {
 	var user (*clerk.User)
 	var document data.Document
 
-	user, ok := c.Get("user").(*clerk.User)
-	if !ok {
-		return echo.ErrUnauthorized
-	}
 	documentID := c.Param("documentID")
 	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
 		switch {
@@ -68,6 +64,11 @@ func (app App) GetDocumentByID(c echo.Context) error {
 		return c.JSON(http.StatusOK, Response[data.Document]{
 			Data: document,
 		})
+	}
+
+	user, ok := c.Get("user").(*clerk.User)
+	if !ok {
+		return echo.ErrUnauthorized
 	}
 
 	if document.UserID != user.ID {
@@ -163,6 +164,8 @@ func (app App) UpdateDocument(c echo.Context) error {
 	document.SetParentDocument(updateData.ParentDocumentID)
 	document.SetIcon(updateData.Icon)
 	document.SetCoverImage(updateData.CoverImage)
+	document.SetIsPublished(updateData.IsPublished)
+	document.SetIsArchived(updateData.IsArchived)
 
 	if err := app.db.Save(&document).Error; err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)

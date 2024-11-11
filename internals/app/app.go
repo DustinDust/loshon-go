@@ -91,7 +91,7 @@ func (app *App) RegisterRoutes() {
 	api.GET("", app.healthCheck)
 
 	api.GET("/documents", app.GetDocuments, app.ClerkAuthMiddleware)
-	api.GET("/documents/:documentID", app.GetDocumentByID, app.ClerkAuthMiddleware)
+	api.GET("/documents/:documentID", app.GetDocumentByID, app.OptionalClerkAuthMiddleware)
 	api.POST("/documents", app.CreateDocument, app.ClerkAuthMiddleware)
 	api.PATCH("/documents/:documentID", app.UpdateDocument, app.ClerkAuthMiddleware)
 	api.DELETE("/documents/:documentID", app.ArchiveDocument, app.ClerkAuthMiddleware)
