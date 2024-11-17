@@ -93,7 +93,6 @@ func (app *App) RegisterMiddlewares() {
 		},
 	}))
 	app.engine.Static("", "assets")
-	app.engine.Use(middleware.Logger())
 }
 
 func (app *App) RegisterRoutes() {
