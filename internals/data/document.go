@@ -18,6 +18,7 @@ type Document struct {
 	ParentDocumentID *string        `gorm:"index,type:uuid" json:"parentDocumentId"`
 	ChildDocuments   []Document     `gorm:"foreignKey:ParentDocumentID" json:"-"`
 	Content          *string        `json:"content"`
+	MdContent        *string        `json:"mdContent"` // for full text search only
 	CoverImage       *string        `json:"coverImage"`
 	Icon             *string        `json:"icon"`
 	CreatedAt        time.Time      `json:"createdAt"`
@@ -126,6 +127,11 @@ func (doc *Document) SetContent(content Optional[string]) {
 		doc.Content = content.Value
 	}
 }
+func (doc *Document) SetMdContent(mdContent Optional[string]) {
+	if mdContent.Defined {
+		doc.MdContent = mdContent.Value
+	}
+}
 
 func (doc *Document) SetCoverImage(coverImage Optional[string]) {
 	if coverImage.Defined {
@@ -148,5 +154,18 @@ func (doc *Document) SetIsArchived(isArchived Optional[bool]) {
 func (doc *Document) SetIsPublished(isPublished Optional[bool]) {
 	if isPublished.Defined {
 		doc.IsPublished = *isPublished.Value
+	}
+}
+
+func (doc Document) ToSearchObject() map[string]any {
+	return map[string]any{
+		"objectID":   doc.ID.String(),
+		"userId":     doc.UserID,
+		"title":      doc.Title,
+		"content":    doc.MdContent,
+		"isArchived": doc.IsArchived,
+		"createdAt":  doc.CreatedAt,
+		"updatedAt":  doc.UpdatedAt,
+		"deletedAt":  doc.DeletedAt,
 	}
 }

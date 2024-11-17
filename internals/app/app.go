@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"loshon-api/internals/config"
 	"loshon-api/internals/data"
+	"loshon-api/internals/search"
 	"os"
 
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -15,9 +16,10 @@ import (
 )
 
 type App struct {
-	engine *echo.Echo
-	db     *gorm.DB
-	config *config.AppConfig
+	engine  *echo.Echo
+	db      *gorm.DB
+	config  *config.AppConfig
+	sclient *search.SearchClient
 }
 
 func NewApp() *App {
@@ -31,6 +33,7 @@ func NewApp() *App {
 	clerk.SetKey(app.config.ClerkSecretKey)
 	app.RegisterMiddlewares()
 	app.RegisterDB()
+	app.RegisterSearchClient()
 	app.RegisterRoutes()
 
 	return app
@@ -50,6 +53,14 @@ func (app *App) RegisterDB() {
 		log.Fatal(err)
 	}
 	app.db = db
+}
+
+func (app *App) RegisterSearchClient() {
+	sclient, err := search.NewSearchClient(app.config.AngoliaAppID, app.config.AngoliaAPIKey)
+	if err != nil {
+		log.Fatalf("cannot initialize search client %v", err)
+	}
+	app.sclient = sclient
 }
 
 func (app *App) RegisterMiddlewares() {

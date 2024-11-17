@@ -13,6 +13,8 @@ import (
 func (app App) ArchiveDocument(c echo.Context) error {
 	var user *clerk.User
 	var document data.Document
+	var archivedDocuments []data.Document
+	var reindexObjects []map[string]any
 
 	user, ok := c.Get("user").(*clerk.User)
 	if !ok {
@@ -34,12 +36,26 @@ func (app App) ArchiveDocument(c echo.Context) error {
 	if err := document.ArchiveRecursively(app.db); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	// reindex all archived documents
+	if err := app.db.Where("user_id=?", user.ID).Where("is_archived=?", true).Find(&archivedDocuments).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	for _, ad := range archivedDocuments {
+		reindexObjects = append(reindexObjects, ad.ToSearchObject())
+	}
+	if err := app.sclient.Reindex("documents", reindexObjects); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, echo.Map{})
 }
 
 func (app App) RestoreArchivedDocument(c echo.Context) error {
 	var user *clerk.User
 	var document data.Document
+	var documents []data.Document
+	var reindexObjects []map[string]any
 
 	user, ok := c.Get("user").(*clerk.User)
 	if !ok {
@@ -60,12 +76,26 @@ func (app App) RestoreArchivedDocument(c echo.Context) error {
 	if err := document.RestoreRecursively(app.db); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	// reindex all archived documents
+	if err := app.db.Where("user_id=?", user.ID).Where("is_archived=?", false).Find(&documents).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	for _, ad := range documents {
+		reindexObjects = append(reindexObjects, ad.ToSearchObject())
+	}
+	if err := app.sclient.Reindex("documents", reindexObjects); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, echo.Map{})
 }
 
 func (app App) DeleteArchivedDocument(c echo.Context) error {
 	var user *clerk.User
 	var document data.Document
+	var deletedDocuments []data.Document
+	var reindexObjects []map[string]any
 
 	user, ok := c.Get("user").(*clerk.User)
 	if !ok {
@@ -85,6 +115,17 @@ func (app App) DeleteArchivedDocument(c echo.Context) error {
 		return echo.ErrForbidden
 	}
 	if err := document.DeleteRecursively(app.db); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// reindex all archived documents
+	if err := app.db.Where("user_id=?", user.ID).Where("deleted_at IS NOT NULL").Find(&deletedDocuments).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	for _, ad := range deletedDocuments {
+		reindexObjects = append(reindexObjects, ad.ToSearchObject())
+	}
+	if err := app.sclient.Reindex("documents", reindexObjects); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 

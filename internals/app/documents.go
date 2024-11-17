@@ -116,6 +116,7 @@ func (app App) CreateDocument(c echo.Context) error {
 	if result.Error != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, result.Error)
 	}
+	app.sclient.SaveObject("documents", document.ToSearchObject())
 	return c.JSON(http.StatusOK, Response[data.Document]{
 		Data: document,
 	})
@@ -159,8 +160,9 @@ func (app App) UpdateDocument(c echo.Context) error {
 	}
 
 	// patch attributes
-	document.SetContent(updateData.Content)
 	document.SetTitle(updateData.Title)
+	document.SetContent(updateData.Content)
+	document.SetMdContent(updateData.MdContent)
 	document.SetParentDocument(updateData.ParentDocumentID)
 	document.SetIcon(updateData.Icon)
 	document.SetCoverImage(updateData.CoverImage)
@@ -170,6 +172,8 @@ func (app App) UpdateDocument(c echo.Context) error {
 	if err := app.db.Save(&document).Error; err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	app.sclient.SaveObject("documents", document.ToSearchObject())
 
 	return c.JSON(http.StatusOK, Response[data.Document]{
 		Data: document,

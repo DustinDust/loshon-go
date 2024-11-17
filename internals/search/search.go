@@ -1,12 +1,10 @@
 package search
 
 import (
-	"encoding/json"
 	"log/slog"
 	"strings"
 
 	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
-	"github.com/labstack/gommon/log"
 )
 
 type SearchClient struct {
@@ -23,28 +21,27 @@ func NewSearchClient(appID, apiKey string) (*SearchClient, error) {
 	}, nil
 }
 
-func (search SearchClient) Reindex(indexName string, data []map[string]any) {
+func (search SearchClient) Reindex(indexName string, data []map[string]any) error {
 	resps, err := search.client.SaveObjects(indexName, data)
 	if err != nil {
-		slog.Warn("failed to save objects", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-		return
+		return err
 	}
 	for _, resp := range resps {
 		slog.Info("object indexed", slog.Attr{Key: "objectID", Value: slog.StringValue(strings.Join(resp.ObjectIDs, ", "))})
 	}
+	return nil
 }
 
-func StructsToMaps[T any](obj []T) ([]map[string]any, error) {
-	result := make([]map[string]any, 0)
-
-	jbyte, err := json.Marshal(obj)
+func (sclient SearchClient) SaveObject(indexName string, data map[string]any) error {
+	resp, err := sclient.client.SaveObject(
+		sclient.client.NewApiSaveObjectRequest(indexName, data),
+	)
 	if err != nil {
-		log.Warnf("failed to convert struct to map %v", err)
-		return result, err
+		return err
 	}
-	if err := json.Unmarshal(jbyte, &result); err != nil {
-		log.Warnf("failed to convert struct to map %v", err)
-		return result, err
-	}
-	return result, nil
+	slog.Info("search object saved", slog.Attr{
+		Key:   "resp",
+		Value: slog.StringValue(resp.String()),
+	})
+	return nil
 }

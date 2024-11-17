@@ -14,6 +14,7 @@ type CreateDocumentRequest struct {
 	IsPublished      bool    `json:"isPublished"`
 	ParentDocumentID *string `json:"parentDocumentId"`
 	Content          *string `json:"content" `
+	MdContent        *string `json:"mdContent"`
 	CoverImage       *string `json:"coverImage"`
 	Icon             *string `json:"icon"`
 }
@@ -25,6 +26,7 @@ type UpdateDocumentRequest struct {
 	IsPublished      data.Optional[bool]   `json:"isPublished"`
 	ParentDocumentID data.Optional[string] `json:"parentDocumentId"`
 	Content          data.Optional[string] `json:"content" `
+	MdContent        data.Optional[string] `json:"mdContent"`
 	CoverImage       data.Optional[string] `json:"coverImage"`
 	Icon             data.Optional[string] `json:"icon"`
 }
