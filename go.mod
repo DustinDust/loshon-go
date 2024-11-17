@@ -3,6 +3,7 @@ module loshon-api
 go 1.23.0
 
 require (
+	github.com/algolia/algoliasearch-client-go/v4 v4.8.1
 	github.com/clerk/clerk-sdk-go/v2 v2.0.9
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/google/uuid v1.6.0

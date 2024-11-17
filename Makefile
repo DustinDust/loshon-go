@@ -1,7 +1,9 @@
+ENV ?= development
+
 .PHONY : run
 
 run: build
-	./bin/api
+	ENV=${ENV} ./bin/api
 
 build:
 	go mod tidy

@@ -102,11 +102,11 @@ func (app *App) RegisterRoutes() {
 }
 
 func (app *App) Run() error {
-	addr := app.config.Addr
+	addr := app.config.Port
 	if addr == "" {
 		addr = ":80"
 	}
-	return app.engine.Start(addr)
+	return app.engine.Start(":" + addr)
 }
 
 func (a App) healthCheck(c echo.Context) error {
