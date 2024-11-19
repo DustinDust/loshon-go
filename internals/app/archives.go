@@ -12,7 +12,7 @@ import (
 
 func (app App) ArchiveDocument(c echo.Context) error {
 	var user *clerk.User
-	var document data.Document
+	var document *data.Document
 	var archivedDocuments []data.Document
 	var reindexObjects []map[string]any
 
@@ -22,7 +22,8 @@ func (app App) ArchiveDocument(c echo.Context) error {
 	}
 
 	documentID := c.Param("documentID")
-	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
+	document, err := app.documentRepo.First("id = ?", documentID)
+	if err != nil {
 		switch {
 		case (errors.Is(err, gorm.ErrRecordNotFound)):
 			return echo.NewHTTPError(http.StatusNotFound, err)
@@ -33,12 +34,13 @@ func (app App) ArchiveDocument(c echo.Context) error {
 	if user.ID != document.UserID {
 		return echo.ErrForbidden
 	}
-	if err := document.ArchiveRecursively(app.db); err != nil {
+	if err := app.documentRepo.Archive(document); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	// reindex all archived documents
-	if err := app.db.Where("user_id=?", user.ID).Where("is_archived=?", true).Find(&archivedDocuments).Error; err != nil {
+	archivedDocuments, err = app.documentRepo.Get(map[string]any{"user_id": user.ID, "is_archived": true})
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	for _, ad := range archivedDocuments {
@@ -53,7 +55,7 @@ func (app App) ArchiveDocument(c echo.Context) error {
 
 func (app App) RestoreArchivedDocument(c echo.Context) error {
 	var user *clerk.User
-	var document data.Document
+	var document *data.Document
 	var documents []data.Document
 	var reindexObjects []map[string]any
 
@@ -62,7 +64,8 @@ func (app App) RestoreArchivedDocument(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 	documentID := c.Param("documentID")
-	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
+	document, err := app.documentRepo.First(map[string]any{"id": documentID})
+	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			return echo.NewHTTPError(http.StatusNotFound, err)
@@ -73,12 +76,13 @@ func (app App) RestoreArchivedDocument(c echo.Context) error {
 	if document.UserID != user.ID {
 		return echo.ErrForbidden
 	}
-	if err := document.RestoreRecursively(app.db); err != nil {
+	if err := app.documentRepo.Restore(document); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// reindex all archived documents
-	if err := app.db.Where("user_id=?", user.ID).Where("is_archived=?", false).Find(&documents).Error; err != nil {
+	// reindex all unarchived documents
+	documents, err = app.documentRepo.Get(map[string]any{"user_id": user.ID, "is_archived": false})
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	for _, ad := range documents {
@@ -93,7 +97,7 @@ func (app App) RestoreArchivedDocument(c echo.Context) error {
 
 func (app App) DeleteArchivedDocument(c echo.Context) error {
 	var user *clerk.User
-	var document data.Document
+	var document *data.Document
 	var deletedDocuments []data.Document
 	var reindexObjects []map[string]any
 
@@ -102,7 +106,8 @@ func (app App) DeleteArchivedDocument(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 	documentID := c.Param("documentID")
-	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
+	document, err := app.documentRepo.First(map[string]any{"id": documentID})
+	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			return echo.NewHTTPError(http.StatusNotFound, err)
@@ -114,12 +119,13 @@ func (app App) DeleteArchivedDocument(c echo.Context) error {
 	if user.ID != document.UserID {
 		return echo.ErrForbidden
 	}
-	if err := document.DeleteRecursively(app.db); err != nil {
+	if err := app.documentRepo.Delete(document); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	// reindex all archived documents
-	if err := app.db.Where("user_id=?", user.ID).Where("deleted_at IS NOT NULL").Find(&deletedDocuments).Error; err != nil {
+	deletedDocuments, err = app.documentRepo.Get("user_id = ? AND deleted IS NOT NULL", user.ID)
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	for _, ad := range deletedDocuments {
@@ -141,17 +147,17 @@ func (app App) GetArchivedDocuments(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	result := app.db.Where("user_id=?", user.ID).Where("is_archived=?", true).Find(&documents)
-	if err := result.Error; err != nil {
+	documents, err := app.documentRepo.Get("user_id=? AND is_archive=true", user.ID)
+	if err != nil {
 		switch {
-		case errors.Is(result.Error, gorm.ErrRecordNotFound):
-			return echo.NewHTTPError(http.StatusNotFound, result.Error)
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return echo.NewHTTPError(http.StatusNotFound, err)
 		default:
-			return echo.NewHTTPError(http.StatusInternalServerError, result.Error)
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
 		}
 	}
 	return c.JSON(http.StatusOK, Response[[]data.Document]{
 		Data:  documents,
-		Total: int(result.RowsAffected),
+		Total: int(len(documents)),
 	})
 }

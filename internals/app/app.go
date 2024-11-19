@@ -12,14 +12,13 @@ import (
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"gorm.io/gorm"
 )
 
 type App struct {
 	engine  *echo.Echo
-	db      *gorm.DB
 	config  *config.AppConfig
 	sclient *search.SearchClient
+    documentRepo data.DocumentRepositoryInterface
 }
 
 func NewApp() *App {
@@ -32,7 +31,7 @@ func NewApp() *App {
 	app.RegisterConfig()
 	clerk.SetKey(app.config.ClerkSecretKey)
 	app.RegisterMiddlewares()
-	app.RegisterDB()
+	app.RegisterRepos()
 	app.RegisterSearchClient()
 	app.RegisterRoutes()
 
@@ -47,12 +46,12 @@ func (app *App) RegisterConfig() {
 	}
 }
 
-func (app *App) RegisterDB() {
+func (app *App) RegisterRepos() {
 	db, err := data.OpenDB(app.config.PostgresUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
-	app.db = db
+	app.documentRepo = data.NewDocumentRepository(db)
 }
 
 func (app *App) RegisterSearchClient() {

@@ -26,33 +26,30 @@ func (app App) GetDocuments(c echo.Context) error {
 		parentDocument = nil
 	}
 
-	result := app.db.
-		Where("user_id", user.ID).
-		Where("parent_document_id", parentDocument).
-		Where("is_archived", false).
-		Order("created_at asc").
-		Find(&documents)
+	documents, err := app.documentRepo.Get(
+		map[string]interface{}{
+			"user_id":            user.ID,
+			"parent_document_id": parentDocument,
+			"is_archived":        false,
+		},
+	)
 
-	if result.Error != nil {
-		switch {
-		case errors.Is(result.Error, gorm.ErrRecordNotFound):
-			return echo.NewHTTPError(http.StatusNotFound, result.Error)
-		default:
-			return echo.NewHTTPError(http.StatusInternalServerError, result.Error)
-		}
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, Response[[]data.Document]{
 		Data:  documents,
-		Total: int(result.RowsAffected),
+		Total: int(len(documents)),
 	})
 }
 
 func (app App) GetDocumentByID(c echo.Context) error {
 	var user (*clerk.User)
-	var document data.Document
+	var document *data.Document
 
 	documentID := c.Param("documentID")
-	if err := app.db.First(&document, "id = ?", documentID).Error; err != nil {
+	document, err := app.documentRepo.First("id = ?", documentID)
+	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			return echo.NewHTTPError(http.StatusNotFound, err)
@@ -62,7 +59,7 @@ func (app App) GetDocumentByID(c echo.Context) error {
 	}
 	if document.IsPublished && !document.IsArchived {
 		return c.JSON(http.StatusOK, Response[data.Document]{
-			Data: document,
+			Data: *document,
 		})
 	}
 
@@ -76,7 +73,7 @@ func (app App) GetDocumentByID(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, Response[data.Document]{
-		Data: document,
+		Data: *document,
 	})
 }
 
@@ -112,9 +109,9 @@ func (app App) CreateDocument(c echo.Context) error {
 		CoverImage:       createData.CoverImage,
 		Icon:             createData.Icon,
 	}
-	result := app.db.Create(&document)
-	if result.Error != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, result.Error)
+	err := app.documentRepo.Save(&document)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	app.sclient.SaveObject("documents", document.ToSearchObject())
 	return c.JSON(http.StatusOK, Response[data.Document]{
@@ -124,7 +121,7 @@ func (app App) CreateDocument(c echo.Context) error {
 
 func (app App) UpdateDocument(c echo.Context) error {
 	var user *clerk.User
-	var document data.Document
+	var document *data.Document
 
 	updateData := UpdateDocumentRequest{
 		ID: c.Param("documentID"),
@@ -146,7 +143,8 @@ func (app App) UpdateDocument(c echo.Context) error {
 		}
 	}
 
-	if err := app.db.First(&document, "id = ?", updateData.ID).Error; err != nil {
+	document, err := app.documentRepo.First("id = ?", updateData.ID)
+	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			return echo.NewHTTPError(http.StatusNotFound, err)
@@ -169,13 +167,13 @@ func (app App) UpdateDocument(c echo.Context) error {
 	document.SetIsPublished(updateData.IsPublished)
 	document.SetIsArchived(updateData.IsArchived)
 
-	if err := app.db.Save(&document).Error; err != nil {
+	if err := app.documentRepo.Save(document); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	app.sclient.SaveObject("documents", document.ToSearchObject())
 
 	return c.JSON(http.StatusOK, Response[data.Document]{
-		Data: document,
+		Data: *document,
 	})
 }
