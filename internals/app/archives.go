@@ -124,7 +124,7 @@ func (app App) DeleteArchivedDocument(c echo.Context) error {
 	}
 
 	// reindex all archived documents
-	deletedDocuments, err = app.documentRepo.Get("user_id = ? AND deleted IS NOT NULL", user.ID)
+	deletedDocuments, err = app.documentRepo.Get("user_id = ? AND deleted_at IS NOT NULL", user.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -147,7 +147,7 @@ func (app App) GetArchivedDocuments(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	documents, err := app.documentRepo.Get("user_id=? AND is_archive=true", user.ID)
+	documents, err := app.documentRepo.Get("user_id=? AND is_archived=true", user.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):

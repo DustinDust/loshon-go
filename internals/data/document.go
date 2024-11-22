@@ -97,14 +97,18 @@ func (doc *Document) SetIsPublished(isPublished Optional[bool]) {
 
 func (doc Document) ToSearchObject() map[string]any {
 	return map[string]any{
-		"objectID":   doc.ID.String(),
-		"userId":     doc.UserID,
-		"title":      doc.Title,
-		"content":    doc.MdContent,
-		"isArchived": doc.IsArchived,
-		"createdAt":  doc.CreatedAt,
-		"updatedAt":  doc.UpdatedAt,
-		"deletedAt":  doc.DeletedAt,
+		"objectID":    doc.ID.String(),
+		"userId":      doc.UserID,
+		"title":       doc.Title,
+		"coverImage":  doc.CoverImage,
+		"icon":        doc.Icon,
+		"content":     doc.MdContent,
+		"isArchived":  doc.IsArchived,
+		"isDeleted":   doc.DeletedAt.Valid,
+		"isPublished": doc.IsPublished,
+		"createdAt":   doc.CreatedAt,
+		"updatedAt":   doc.UpdatedAt,
+		"deletedAt":   doc.DeletedAt,
 	}
 }
 
@@ -145,7 +149,7 @@ func (repo DocumentRepository) Get(query interface{}, args ...any) ([]Document, 
 
 func (repo DocumentRepository) First(query interface{}, args ...any) (*Document, error) {
 	var document Document
-	if err := repo.db.First(document, query, args).Error; err != nil {
+	if err := repo.db.First(&document, query, args).Error; err != nil {
 		return nil, err
 	}
 	return &document, nil

@@ -28,7 +28,7 @@ func main() {
 	}
 
 	documents := []data.Document{}
-	if err := gormdb.Find(&documents).Error; err != nil {
+	if err := gormdb.Unscoped().Find(&documents).Error; err != nil {
 		log.Fatalf("failed to fetch documents %v", err)
 	}
 
