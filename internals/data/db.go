@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -20,4 +21,14 @@ func OpenDB(url string) (*gorm.DB, error) {
 	}), &gorm.Config{TranslateError: true, NowFunc: func() time.Time {
 		return time.Now().UTC()
 	}})
+}
+
+type Optional[T any] struct {
+	Defined bool
+	Value   *T
+}
+
+func (o *Optional[T]) UnmarshalJSON(data []byte) error {
+	o.Defined = true
+	return json.Unmarshal(data, &o.Value)
 }

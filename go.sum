@@ -1,3 +1,5 @@
+github.com/algolia/algoliasearch-client-go/v4 v4.8.1 h1:F8PHYily2ROT7BcZyXNEFiHlOBa4yaGrxaSRX8tLWNA=
+github.com/algolia/algoliasearch-client-go/v4 v4.8.1/go.mod h1:j9LGEgD4FR4odh/SbfBeIjp+z4+PlF4H0Yg7JIkSs8Y=
 github.com/clerk/clerk-sdk-go/v2 v2.0.9 h1:ZqjhMwLSIlJBEmvimrqxs/4B5QX6XPLAfkidj7QvteE=
 github.com/clerk/clerk-sdk-go/v2 v2.0.9/go.mod h1:SD9fe+omcaigqL/B3fbzIFREkeBqiC0CwSM7/qt7Xw4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

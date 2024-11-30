@@ -5,12 +5,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "cwd": ".",
-      "name": "Launch Package",
+      "name": "Attach to Process",
       "type": "go",
-      "request": "launch",
-      "mode": "auto",
-      "program": "./cmd/api/."
+      "request": "attach",
+      "mode": "local",
+      "processId": 0
     }
   ]
 }

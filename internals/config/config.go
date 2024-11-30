@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"loshon-api/internals/validator"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -11,69 +13,42 @@ type AppConfig struct {
 	ClerkPublishableKey string `mapstructure:"CLERK_PUBLISHABLE_KEY" validate:"required"`
 	ClerkSecretKey      string `mapstructure:"CLERK_SECRET_KEY" validate:"required"`
 	PostgresUrl         string `mapstructure:"POSTGRES_URL" validate:"required"`
-	Environment         string `mapstructure:"ENV" validate:"required"`
-	Addr                string `mapstructure:"ADDR" validate:"required"`
+	AngoliaAppID        string `mapstructure:"ANGOLIA_APP_ID" validate:"required"`
+	AngoliaAPIKey       string `mapstructure:"ANGOLIA_API_KEY" validate:"required"`
+	Port                string `mapstructure:"PORT" validate:"required"`
 }
 
-func (aconf *AppConfig) Merge(conf *AppConfig) {
-	if aconf.ClerkPublishableKey == "" {
-		aconf.ClerkPublishableKey = conf.ClerkPublishableKey
-	}
+func loadEnv(env string) (*AppConfig, error) {
+	v := validator.NewValidator()
+	config := AppConfig{}
 
-	if aconf.ClerkSecretKey == "" {
-		aconf.ClerkSecretKey = conf.ClerkSecretKey
-	}
-
-	if aconf.PostgresUrl == "" {
-		aconf.PostgresUrl = conf.PostgresUrl
-	}
-
-	if aconf.Environment == "" {
-		aconf.Environment = conf.Environment
-	}
-
-	if aconf.Addr == "" {
-		aconf.Addr = conf.Addr
-	}
-}
-
-func loadEnv(altPath string) (*AppConfig, error) {
 	// auto load to env
+	viper.AddConfigPath(".")
+	viper.SetConfigName(fmt.Sprintf(".env.%s", env))
+	viper.SetConfigType("env")
+
 	viper.AutomaticEnv()
 
-	config := AppConfig{
-		ClerkPublishableKey: viper.GetString("CLERK_PUBLISHABLE_KEY"),
-		ClerkSecretKey:      viper.GetString("CLERK_SECRET_KEY"),
-		PostgresUrl:         viper.GetString("POSTGRES_URL"),
-		Environment:         viper.GetString("ENVIRONMENT"),
-		Addr:                viper.GetString("ADDR"),
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("failed to load config %v", err)
 	}
 
-	v := validator.NewValidator()
-	err := v.ValidateStruct(config)
-
-	if err != nil {
-		viper.AddConfigPath(altPath)
-		viper.SetConfigType("env")
-		viper.SetConfigFile(".env")
-
-		if err := viper.ReadInConfig(); err != nil {
-			return nil, fmt.Errorf("error loading alternative config: %v", err.Error())
-		}
-
-		conf := &AppConfig{}
-		if err := viper.Unmarshal(&conf); err != nil {
-			return nil, fmt.Errorf("error loading alternative config: %v", err.Error())
-		}
-
-		config.Merge(conf)
-		if err := v.ValidateStruct(config); err != nil {
-			return nil, fmt.Errorf("error loading alternative config: %v", err.Error())
-		}
+	viper.Unmarshal(&config)
+	if err := v.ValidateStruct(config); err != nil {
+		log.Fatalf("failed to load config %v", err)
 	}
+
+	// if struct validation fail (missing required fields), try to load from file
 	return &config, nil
 }
 
 func LoadConfig() (*AppConfig, error) {
-	return loadEnv(".")
+	var env string
+	if e, ok := os.LookupEnv("ENV"); !ok {
+		env = "development"
+	} else {
+		env = e
+	}
+
+	return loadEnv(env)
 }
