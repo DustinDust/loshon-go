@@ -46,7 +46,7 @@ func (app App) ArchiveDocument(c echo.Context) error {
 	for _, ad := range archivedDocuments {
 		reindexObjects = append(reindexObjects, ad.ToSearchObject())
 	}
-	if err := app.sclient.Reindex("documents", reindexObjects); err != nil {
+	if err := app.sclient.Reindex(app.config.SearchIndex, reindexObjects); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -88,7 +88,7 @@ func (app App) RestoreArchivedDocument(c echo.Context) error {
 	for _, ad := range documents {
 		reindexObjects = append(reindexObjects, ad.ToSearchObject())
 	}
-	if err := app.sclient.Reindex("documents", reindexObjects); err != nil {
+	if err := app.sclient.Reindex(app.config.SearchIndex, reindexObjects); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -131,7 +131,7 @@ func (app App) DeleteArchivedDocument(c echo.Context) error {
 	for _, ad := range deletedDocuments {
 		reindexObjects = append(reindexObjects, ad.ToSearchObject())
 	}
-	if err := app.sclient.Reindex("documents", reindexObjects); err != nil {
+	if err := app.sclient.Reindex(app.config.SearchIndex, reindexObjects); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 

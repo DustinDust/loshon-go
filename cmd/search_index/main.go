@@ -37,5 +37,5 @@ func main() {
 		documentSearchObjects = append(documentSearchObjects, doc.ToSearchObject())
 	}
 
-	searchClient.Reindex("documents", documentSearchObjects)
+	searchClient.Reindex(config.SearchIndex, documentSearchObjects)
 }
