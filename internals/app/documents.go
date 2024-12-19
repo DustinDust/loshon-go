@@ -113,7 +113,7 @@ func (app App) CreateDocument(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	app.sclient.SaveObject("documents", document.ToSearchObject())
+	app.sclient.SaveObject(app.config.SearchIndex, document.ToSearchObject())
 	return c.JSON(http.StatusOK, Response[data.Document]{
 		Data: document,
 	})
@@ -171,7 +171,7 @@ func (app App) UpdateDocument(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	app.sclient.SaveObject("documents", document.ToSearchObject())
+	app.sclient.SaveObject(app.config.SearchIndex, document.ToSearchObject())
 
 	return c.JSON(http.StatusOK, Response[data.Document]{
 		Data: *document,
