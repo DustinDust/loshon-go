@@ -16,6 +16,7 @@ type AppConfig struct {
 	AngoliaAppID        string `mapstructure:"ANGOLIA_APP_ID" validate:"required"`
 	AngoliaAPIKey       string `mapstructure:"ANGOLIA_API_KEY" validate:"required"`
 	Port                string `mapstructure:"PORT" validate:"required"`
+	SearchIndex         string `validate:"required"`
 }
 
 func loadEnv(env string) (*AppConfig, error) {
@@ -32,6 +33,8 @@ func loadEnv(env string) (*AppConfig, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("failed to load config %v", err)
 	}
+
+	config.SearchIndex = fmt.Sprintf("%s_documents", env)
 
 	viper.Unmarshal(&config)
 	if err := v.ValidateStruct(config); err != nil {
