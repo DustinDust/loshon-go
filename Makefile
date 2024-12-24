@@ -9,6 +9,9 @@ build:
 	go mod tidy
 	go build -o ./bin/ ./cmd/api/
 
+test:
+	go test -cover -v $(shell go list ./... | grep -vE "cmd|config")
+
 migrate.create:
 	migrate create -seq -ext .sql -dir ./migrations ${NAME}
 

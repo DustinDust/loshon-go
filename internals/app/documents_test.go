@@ -75,3 +75,30 @@ func TestGetDocuments(t *testing.T) {
 		}
 	})
 }
+
+func TestGetDocumentByID(t *testing.T) {
+	os.Setenv("ENV", "test")
+	e := echo.New()
+	app := &App{
+		engine: e,
+	}
+
+	t.Run("successful", func(t *testing.T) {
+		mockRepo := new(data.MockDocumentRepository)
+		mockRepo.On("First", mock.Anything).Return(&data.Document{ID: uuid.New(), Title: "test one", UserID: "1"}, nil)
+		app.documentRepo = mockRepo
+		req := httptest.NewRequest(http.MethodGet, "/documents/1", nil)
+		rec := httptest.NewRecorder()
+		ectx := e.NewContext(req, rec)
+		ectx.Set("user", &clerk.User{ID: "1"})
+
+        if assert.NoError(t, app.GetDocumentByID(ectx)) {
+            assert.Equal(t, http.StatusOK, rec.Code)
+            var respJSON Response[data.Document]
+            if err := json.Unmarshal(rec.Body.Bytes(), &respJSON); err != nil {
+                t.Errorf("error unmarshalling response: %v", err)
+            }
+            assert.Equal(t, "test one", respJSON.Data.Title)
+        }
+	})
+}
