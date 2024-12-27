@@ -114,7 +114,7 @@ func (app App) CreateDocument(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	app.sclient.SaveObject(app.config.SearchIndex, document.ToSearchObject())
-	return c.JSON(http.StatusOK, Response[data.Document]{
+	return c.JSON(http.StatusCreated, Response[data.Document]{
 		Data: document,
 	})
 }

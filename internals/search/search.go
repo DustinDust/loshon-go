@@ -7,6 +7,11 @@ import (
 	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 )
 
+type SearchClientInterface interface {
+	Reindex(indexName string, data []map[string]any) error
+	SaveObject(indexName string, data map[string]any) error
+}
+
 type SearchClient struct {
 	client *search.APIClient
 }

@@ -15,10 +15,10 @@ import (
 )
 
 type App struct {
-	engine  *echo.Echo
-	config  *config.AppConfig
-	sclient *search.SearchClient
-    documentRepo data.DocumentRepositoryInterface
+	engine       *echo.Echo
+	config       *config.AppConfig
+	sclient      search.SearchClientInterface
+	documentRepo data.DocumentRepositoryInterface
 }
 
 func NewApp() *App {
