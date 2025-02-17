@@ -12,9 +12,9 @@ import (
 type AppConfig struct {
 	ClerkPublishableKey string `mapstructure:"CLERK_PUBLISHABLE_KEY" validate:"required"`
 	ClerkSecretKey      string `mapstructure:"CLERK_SECRET_KEY" validate:"required"`
-	PostgresUrl         string `mapstructure:"POSTGRES_URL" validate:"required"`
-	AngoliaAppID        string `mapstructure:"ANGOLIA_APP_ID" validate:"required"`
-	AngoliaAPIKey       string `mapstructure:"ANGOLIA_API_KEY" validate:"required"`
+	DbUrl               string `mapstructure:"DB_URL" validate:"required"`
+	AlgoliaAppID        string `mapstructure:"ALGOLIA_APP_ID" validate:"required"`
+	AlgoliaAPIKey       string `mapstructure:"ALGOLIA_API_KEY" validate:"required"`
 	Port                string `mapstructure:"PORT" validate:"required"`
 	SearchIndex         string `validate:"required"`
 }

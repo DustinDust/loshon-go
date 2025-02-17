@@ -47,7 +47,7 @@ func (app *App) RegisterConfig() {
 }
 
 func (app *App) RegisterRepos() {
-	db, err := data.OpenDB(app.config.PostgresUrl)
+	db, err := data.OpenDB(app.config.DbUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func (app *App) RegisterRepos() {
 }
 
 func (app *App) RegisterSearchClient() {
-	sclient, err := search.NewSearchClient(app.config.AngoliaAppID, app.config.AngoliaAPIKey)
+	sclient, err := search.NewSearchClient(app.config.AlgoliaAppID, app.config.AlgoliaAPIKey)
 	if err != nil {
 		log.Fatalf("cannot initialize search client %v", err)
 	}

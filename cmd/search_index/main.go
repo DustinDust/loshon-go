@@ -17,12 +17,12 @@ func main() {
 		log.Fatalf("failed to load config %v", err)
 	}
 
-	searchClient, err := search.NewSearchClient(config.AngoliaAppID, config.AngoliaAPIKey)
+	searchClient, err := search.NewSearchClient(config.AlgoliaAppID, config.AlgoliaAPIKey)
 	if err != nil {
 		log.Fatalf("failed to create search client %v", err)
 	}
 
-	gormdb, err := data.OpenDB(config.PostgresUrl)
+	gormdb, err := data.OpenDB(config.DbUrl)
 	if err != nil {
 		log.Fatalf("failed to open db %v", err)
 	}
