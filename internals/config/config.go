@@ -47,10 +47,12 @@ func loadEnv(env string) (*AppConfig, error) {
 
 func LoadConfig() (*AppConfig, error) {
 	var env string
-	if e, ok := os.LookupEnv("ENV"); !ok {
-		env = "development"
-	} else {
+	if e, ok := os.LookupEnv("ENV"); ok {
 		env = e
+	} else if e, ok := os.LookupEnv("TARGET_ENV"); ok {
+		env = e
+	} else {
+		env = "development"
 	}
 
 	return loadEnv(env)
