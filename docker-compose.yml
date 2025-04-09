@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        TARGET_ENV: ${TARGET_ENV:-development} # Pass the target environment as a build argument
     ports:
       - '8080:8080' # Expose API port (adjust if your API uses a different port)
     env_file:

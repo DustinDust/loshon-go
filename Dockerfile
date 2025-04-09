@@ -9,7 +9,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/api
 
 # RUNNER
 FROM debian:stable-slim AS runner
-ARG TARGET_ENV=${TARGET_ENV}
+ARG TARGET_ENV="development"
 COPY --from=builder /api /api
 COPY ./.env.$TARGET_ENV ./.env.$TARGET_ENV
 EXPOSE 8081
