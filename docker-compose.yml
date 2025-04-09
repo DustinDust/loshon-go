@@ -1,0 +1,53 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080' # Expose API port (adjust if your API uses a different port)
+    env_file:
+      - .env.${TARGET_ENV:-development}
+    depends_on:
+      - database
+    restart: unless-stopped
+    networks:
+      - loshon-network
+  
+  migrations:
+    image: migrate/migrate:v4.18.2
+    entrypoint: ["sh", "-c", "migrate -path ./migrations -database \"$$DB_URL?sslmode=disable\" up"]
+    env_file:
+      - .env.${TARGET_ENV:-development}
+    depends_on:
+      - database
+    volumes:
+      - ./migrations:/migrations # Mount local migrations directory
+    restart: no
+    networks:
+      - loshon-network
+
+  database:
+    image: postgres:15-alpine # Using stable PostgreSQL version (alpine for smaller size)
+    env_file:
+      - .env.${TARGET_ENV:-development}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-loshon-prod}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - loshon-network
+
+volumes:
+  postgres_data: # Persistent volume for database data
+
+networks:
+  loshon-network: # Dedicated network for these services
+    driver: bridge
