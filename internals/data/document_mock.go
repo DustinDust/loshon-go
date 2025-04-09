@@ -6,7 +6,7 @@ type MockDocumentRepository struct {
 	mock.Mock
 }
 
-func (repo *MockDocumentRepository) Get(query interface{}, _ ...any) ([]Document, error) {
+func (repo *MockDocumentRepository) Get(query any, _ ...any) ([]Document, error) {
 	args := repo.Called(query)
 	err := args.Get(1)
 	if err != nil {
@@ -16,7 +16,7 @@ func (repo *MockDocumentRepository) Get(query interface{}, _ ...any) ([]Document
 	}
 }
 
-func (repo *MockDocumentRepository) First(query interface{}, _ ...any) (*Document, error) {
+func (repo *MockDocumentRepository) First(query any, _ ...any) (*Document, error) {
 	args := repo.Called(query)
 	err := args.Get(1)
 	if err != nil {
