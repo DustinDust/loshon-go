@@ -10,6 +10,7 @@ import (
 type SearchClientInterface interface {
 	Reindex(indexName string, data []map[string]any) error
 	SaveObject(indexName string, data map[string]any) error
+	Clear(indexName string) error
 }
 
 type SearchClient struct {
@@ -49,4 +50,18 @@ func (sclient SearchClient) SaveObject(indexName string, data map[string]any) er
 		Value: slog.StringValue(resp.String()),
 	})
 	return nil
+}
+
+func (sclient SearchClient) Clear(indexName string) error {
+	indexExist, err := sclient.client.IndexExists(indexName)
+	if err != nil {
+		return err
+	}
+	if !indexExist {
+		slog.Info("index does not exist", slog.Attr{Key: "indexName", Value: slog.StringValue(indexName)})
+		return nil
+	}
+	_, err = sclient.client.ClearObjects(sclient.client.NewApiClearObjectsRequest(indexName))
+
+	return err
 }

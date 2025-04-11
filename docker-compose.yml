@@ -6,7 +6,7 @@ services:
       args:
         - TARGET_ENV=${TARGET_ENV:-development} # Pass the target environment as a build argument
     ports:
-      - '8080:8080' # Expose API port (adjust if your API uses a different port)
+      - "127.0.0.1:8080:8080" # Expose API port (adjust if your API uses a different port)
     env_file:
       - .env.${TARGET_ENV:-development}
     depends_on:
@@ -15,10 +15,15 @@ services:
     restart: unless-stopped
     networks:
       - loshon-network
-  
+
   migrations:
     image: migrate/migrate:v4.18.2
-    entrypoint: ["sh", "-c", "migrate -path ./migrations -database \"$$DB_URL?sslmode=disable\" up"]
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        'migrate -path ./migrations -database "$$DB_URL?sslmode=disable" up',
+      ]
     env_file:
       - .env.${TARGET_ENV:-development}
     depends_on:
@@ -36,11 +41,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U \"$$POSTGRES_USER\" \"$$POSTGRES_DB\"",
-        ]
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 5s
       timeout: 5s
       retries: 5
