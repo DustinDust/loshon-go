@@ -95,7 +95,7 @@ func (app *App) RegisterMiddlewares() {
 }
 
 func (app *App) RegisterRoutes() {
-	api := app.engine.Group("/api")
+	api := app.engine.Group("/notes")
 
 	api.GET("", app.healthCheck)
 
